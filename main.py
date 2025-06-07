@@ -38,7 +38,9 @@ async def start_webhook():
         if request.method == "POST":
             try:
                 logger.info("Received webhook request")
-                update = Update(**await request.json())
+                data = await request.json()
+                logger.info(f"Webhook data: {data}")
+                update = Update(**data)
                 await dp.feed_update(bot=bot, update=update)
                 return aiohttp.web.Response(text="OK")
             except Exception as e:
