@@ -54,7 +54,7 @@ async def start_webhook():
 
     app.router.add_post("/webhook", handle)
     app.router.add_get("/", index)
-    app.router.add_head("/", index)
+    
 
     runner = aiohttp.web.AppRunner(app)
     await runner.setup()
