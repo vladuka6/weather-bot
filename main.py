@@ -35,9 +35,11 @@ async def on_shutdown(app):
 async def start_webhook():
     app = aiohttp.web.Application()
     async def handle(request):
-        update = Update(**await request.json())
-        await dp.feed_update(bot=bot, update=update)
-        return aiohttp.web.Response(text="OK")
+        if request.method == "POST":
+            update = Update(**await request.json())
+            await dp.feed_update(bot=bot, update=update)
+            return aiohttp.web.Response(text="OK")
+        return aiohttp.web.Response(status=404)
 
     app.router.add_post("/webhook", handle)
     runner = aiohttp.web.AppRunner(app)
