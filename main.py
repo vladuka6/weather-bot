@@ -36,9 +36,14 @@ async def start_webhook():
     app = aiohttp.web.Application()
     async def handle(request):
         if request.method == "POST":
-            update = Update(**await request.json())
-            await dp.feed_update(bot=bot, update=update)
-            return aiohttp.web.Response(text="OK")
+            try:
+                logger.info("Received webhook request")
+                update = Update(**await request.json())
+                await dp.feed_update(bot=bot, update=update)
+                return aiohttp.web.Response(text="OK")
+            except Exception as e:
+                logger.error(f"Error processing webhook: {e}")
+                return aiohttp.web.Response(status=500)
         return aiohttp.web.Response(status=404)
 
     app.router.add_post("/webhook", handle)
