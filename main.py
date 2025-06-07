@@ -34,6 +34,7 @@ async def on_shutdown(app):
 
 async def start_webhook():
     app = aiohttp.web.Application()
+
     async def handle(request):
         if request.method == "POST":
             try:
@@ -48,11 +49,18 @@ async def start_webhook():
                 return aiohttp.web.Response(status=500)
         return aiohttp.web.Response(status=404)
 
+    async def index(request):
+        return aiohttp.web.Response(text="Бот работает")
+
     app.router.add_post("/webhook", handle)
+    app.router.add_get("/", index)
+    app.router.add_head("/", index)
+
     runner = aiohttp.web.AppRunner(app)
     await runner.setup()
-    site = aiohttp.web.TCPSite(runner, host="0.0.0.0", port=10005)
+    site = aiohttp.web.TCPSite(runner, host="0.0.0.0", port=10000)
     await site.start()
+
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
 
