@@ -14,26 +14,40 @@ from scheduler import schedule_jobs, start_scheduler
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Ініціалізація бота і диспетчера
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="Markdown"))
 dp = Dispatcher(storage=MemoryStorage())
 dp.include_router(router)
 logger.info("Dispatcher and router initialized")
 
+# Ініціалізація бази даних
 init_db()
 
+# Обробка запуску
 async def on_startup(app):
-    logger.info("Бот запущено!")
-    await bot.set_webhook(url=WEBHOOK_URL)
+    logger.info("Бот запускається...")
+
+    # Перевірка поточного webhook
+    webhook_info = await bot.get_webhook_info()
+    logger.info(f"Поточний webhook Telegram: {webhook_info.url}")
+
+    if webhook_info.url != WEBHOOK_URL:
+        logger.info(f"Встановлюю новий webhook: {WEBHOOK_URL}")
+        await bot.set_webhook(url=WEBHOOK_URL)
+
+    # Запуск планувальника
     start_scheduler()
     await schedule_jobs(bot)
-    logger.info("Webhook set and scheduler started")
+    logger.info("Webhook встановлено. Планувальник запущено.")
 
+# Обробка завершення
 async def on_shutdown(app):
-    logger.info("Бот зупинено!")
+    logger.info("Бот зупиняється...")
     await bot.delete_webhook()
     await dp.storage.close()
     await bot.session.close()
 
+# Запуск aiohttp-сервера
 async def start_webhook():
     app = aiohttp.web.Application()
 
@@ -50,9 +64,7 @@ async def start_webhook():
                     logger.error("Невірний формат даних webhook")
                     return aiohttp.web.Response(status=400)
                 update = Update(**data)
-                logger.info("Передача оновлення до диспетчера")
                 await dp.feed_update(bot=bot, update=update)
-                logger.info("Оновлення оброблено успішно")
                 return aiohttp.web.Response(text="OK")
             except Exception as e:
                 logger.error(f"Помилка обробки webhook: {e}", exc_info=True)
@@ -61,20 +73,23 @@ async def start_webhook():
 
     app.router.add_get("/", handle_root)
     app.router.add_post("/webhook", handle_webhook)
-    
+
+    # Реєстрація подій запуску і зупинки
+    dp.startup.register(on_startup)
+    dp.shutdown.register(on_shutdown)
+
+    # Запуск сервера
     runner = aiohttp.web.AppRunner(app)
     await runner.setup()
     site = aiohttp.web.TCPSite(runner, host="0.0.0.0", port=10000)
     await site.start()
     logger.info("Сервер запущено на 0.0.0.0:10000")
 
-    dp.startup.register(on_startup)
-    dp.shutdown.register(on_shutdown)
-
     try:
-        await asyncio.Future()
+        await asyncio.Future()  # keep running
     finally:
         await runner.cleanup()
 
+# Точка входу
 if __name__ == "__main__":
     asyncio.run(start_webhook())
