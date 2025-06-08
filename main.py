@@ -38,24 +38,24 @@ async def start_webhook():
     app = aiohttp.web.Application()
 
     async def handle_root(request):
-        return aiohttp.web.Response(text="Бот работает")
+        return aiohttp.web.Response(text="Бот працює")
 
     async def handle_webhook(request):
         if request.method == "POST":
             try:
-                logger.info("Received webhook request")
+                logger.info("Отримано запит до webhook")
                 data = await request.json()
-                logger.info(f"Webhook data: {data}")
+                logger.info(f"Дані webhook: {data}")
                 if not isinstance(data, dict) or 'update_id' not in data:
-                    logger.error("Invalid webhook data format")
+                    logger.error("Невірний формат даних webhook")
                     return aiohttp.web.Response(status=400)
                 update = Update(**data)
-                logger.info("Feeding update to dispatcher")
+                logger.info("Передача оновлення до диспетчера")
                 await dp.feed_update(bot=bot, update=update)
-                logger.info("Update processed successfully")
+                logger.info("Оновлення оброблено успішно")
                 return aiohttp.web.Response(text="OK")
             except Exception as e:
-                logger.error(f"Error processing webhook: {e}", exc_info=True)
+                logger.error(f"Помилка обробки webhook: {e}", exc_info=True)
                 return aiohttp.web.Response(status=500)
         return aiohttp.web.Response(status=404)
 
@@ -66,7 +66,7 @@ async def start_webhook():
     await runner.setup()
     site = aiohttp.web.TCPSite(runner, host="0.0.0.0", port=10000)
     await site.start()
-    logger.info("Server started on 0.0.0.0:10000")
+    logger.info("Сервер запущено на 0.0.0.0:10000")
 
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
