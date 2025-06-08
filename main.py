@@ -46,6 +46,9 @@ async def start_webhook():
                 logger.info("Received webhook request")
                 data = await request.json()
                 logger.info(f"Webhook data: {data}")
+                if not isinstance(data, dict) or 'update_id' not in data:
+                    logger.error("Invalid webhook data format")
+                    return aiohttp.web.Response(status=400)
                 update = Update(**data)
                 logger.info("Feeding update to dispatcher")
                 await dp.feed_update(bot=bot, update=update)
