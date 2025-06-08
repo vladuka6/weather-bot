@@ -49,6 +49,7 @@ async def start_webhook():
                 update = Update(**data)
                 logger.info("Feeding update to dispatcher")
                 await dp.feed_update(bot=bot, update=update)
+                logger.info("Update processed successfully")
                 return aiohttp.web.Response(text="OK")
             except Exception as e:
                 logger.error(f"Error processing webhook: {e}", exc_info=True)
